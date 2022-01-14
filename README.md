@@ -19,7 +19,7 @@ dotnet run -- --source=rtsp --rtsp:streamurl=rtsp://camera/stream
 This will start a server on port `5000` and the relayed stream is available at http://localhost:5000/stream.
 
 ## Docker
-The program is readily available on [docker kub](https://hub.docker.com/r/rmjac/mjpeg-relay).
+The program is readily available on [docker hub](https://hub.docker.com/r/rmjac/mjpeg-relay).
 The same command line switches apply, for example:
 ```
 docker run --network=host rmjac/mjpeg-relay --urls=http://+:9000 --source=rtsp --rtsp:streamurl=rtsp://some/stream
