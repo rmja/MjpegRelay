@@ -1,6 +1,6 @@
 # Motion JPEG Relay
 This is yet another implementation of a mjpeg relay/forwarder/proxy.
-This time in C#.
+This time in C#. It should be reasonably fast and support many clients without any issues. It consumes approximately 60mb of ram and does not use any significant cpu resources.
 
 It makes a single connection to a camera stream (either rtsp or mjpeg),
 and provides a stream endpoint which can be used for many clients without any burdon on the camera.
