@@ -44,12 +44,6 @@ namespace MjpegRelay
 
                 var connectedTimes = _clients.Keys.Select(client => now - (DateTime)client.Items["RequestStarted"]).ToArray();
                 _logger.LogInformation("There are currently {ClientCount} connected clients with connection times: {ConnectedTimes}.", ClientCount, connectedTimes);
-                //foreach (var client in _clients.Keys)
-                //{
-                //    var requestStarted = (DateTime)client.Items["RequestStarted"];
-                //    var connected = now - requestStarted;
-                //    _logger.LogInformation("Client {ClientIp} has been connected for {ConnectedMinutes} minutes and {Connected} seconds.", client.Connection.RemoteIpAddress, (int)connected.TotalMinutes, (int)connected.Seconds);
-                //}
                 await Task.Delay(5000, stoppingToken);
             }
         }
