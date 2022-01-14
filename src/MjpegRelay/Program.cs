@@ -1,5 +1,4 @@
 ﻿using MjpegRelay;
-using Microsoft.Net.Http.Headers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,16 +31,11 @@ app.MapGet("/Status", async (HttpContext context, Broadcaster broadcaster, Cance
 
 app.MapGet("/Stream", async (HttpContext context, Broadcaster broadcaster, CancellationToken cancellationToken) =>
 {
-    context.Response.Headers[HeaderNames.CacheControl] = "no-store, no-cache, max-age=0";
-    context.Response.Headers[HeaderNames.ContentType] = $"multipart/x-mixed-replace; boundary={Broadcaster.Boundary}";
-
-    await context.Response.StartAsync(cancellationToken);
-
-    var client = context.Response.BodyWriter;
-    broadcaster.AddClient(client);
+    broadcaster.AddClient(context);
     
     try
     {
+        await context.Response.StartAsync(cancellationToken);
         await Task.Delay(Timeout.Infinite, cancellationToken);
     }
     catch (OperationCanceledException)
@@ -49,7 +43,7 @@ app.MapGet("/Stream", async (HttpContext context, Broadcaster broadcaster, Cance
     }
     finally
     {
-        broadcaster.RemoveClient(client);
+        broadcaster.RemoveClient(context);
     }
 });
 

@@ -1,4 +1,5 @@
-﻿using System.Buffers;
+﻿using Microsoft.Net.Http.Headers;
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.IO.Pipelines;
 using System.Text;
@@ -10,16 +11,19 @@ namespace MjpegRelay
         public const string Boundary = "frame-boundary";
         private const string Newline = "\r\n";
 
-        private readonly ConcurrentDictionary<PipeWriter, bool> _clients = new();
+        private readonly ConcurrentDictionary<HttpContext, bool> _clients = new();
 
         public int ClientCount => _clients.Count;
 
-        public void AddClient(PipeWriter client)
+        public void AddClient(HttpContext client)
         {
+            client.Response.Headers[HeaderNames.CacheControl] = "no-store, no-cache, max-age=0";
+            client.Response.Headers[HeaderNames.ContentType] = $"multipart/x-mixed-replace; boundary={Broadcaster.Boundary}";
+
             _clients.TryAdd(client, false);
         }
 
-        public void RemoveClient(PipeWriter client)
+        public void RemoveClient(HttpContext client)
         {
             _clients.Remove(client, out _);
         }
@@ -33,14 +37,16 @@ namespace MjpegRelay
 
             foreach (var client in _clients.Keys)
             {
-                client.Write(boundaryBytes);
+                var body = client.Response.BodyWriter;
+
+                body.Write(boundaryBytes);
 
                 foreach (var slice in imageBytes)
                 {
-                    client.Write(slice.Span);
+                    body.Write(slice.Span);
                 }
 
-                _ = client.FlushAsync();
+                _ = body.FlushAsync();
             }
         }
 
