@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging.Console;
 using MjpegRelay;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,11 +9,13 @@ builder.Services
     {
         options.ColorBehavior = LoggerColorBehavior.Enabled;
         options.SingleLine = false;
-        options.TimestampFormat = "yyyy-MM-dd'T'hh:mm:ss ";
+        var format = CultureInfo.InvariantCulture.DateTimeFormat;
+        options.TimestampFormat = format.ShortDatePattern + " " + format.LongTimePattern +  " ";
     }))
     .AddHostedService<StreamService>()
     .AddSingleton<Broadcaster>()
-    .AddSingleton<IStreamSink>(sp => sp.GetService<Broadcaster>());
+    .AddSingleton<IStreamSink>(sp => sp.GetService<Broadcaster>())
+    .AddHostedService(sp => sp.GetService<Broadcaster>());
 
 switch (builder.Configuration["Source"]?.ToLower())
 {
@@ -23,12 +26,19 @@ switch (builder.Configuration["Source"]?.ToLower())
         break;
     case "mjpeg":
         builder.Services
+            .AddHttpClient()
             .AddSingleton<IStreamSource, MjpegSource>()
             .Configure<MjpegOptions>(builder.Configuration.GetSection("Mjpeg"));
         break;
 }
 
 var app = builder.Build();
+
+app.Use((context, next) =>
+{
+    context.Items.Add("RequestStarted", DateTime.UtcNow);
+    return next();
+});
 
 app.MapGet("/Status", async (HttpContext context, Broadcaster broadcaster, CancellationToken cancellationToken) =>
 {

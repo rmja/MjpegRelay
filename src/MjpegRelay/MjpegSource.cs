@@ -42,6 +42,7 @@ namespace MjpegRelay
             while (!cancellationToken.IsCancellationRequested)
             {
                 var section = await multipartReader.ReadNextSectionAsync(cancellationToken);
+                var timestamp = DateTime.UtcNow; // Maybe get from header if available?
 
                 var sectionLength = int.Parse(section.Headers[HeaderNames.ContentLength]);
                 var buffer = ArrayPool<byte>.Shared.Rent(sectionLength);
@@ -60,7 +61,7 @@ namespace MjpegRelay
                     sequence.Write(buffer.AsSpan(0, count));
                 }
                 
-                _sink.ImageReceived(sequence.AsReadOnlySequence);
+                _sink.ImageReceived(timestamp, sequence.AsReadOnlySequence);
             }
         }
     }

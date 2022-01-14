@@ -56,7 +56,7 @@ namespace MjpegRelay
             }
 
             var imageBytes = new ReadOnlySequence<byte>(_imageBuffer, 0, imageSize);
-            _sink.ImageReceived(imageBytes);
+            _sink.ImageReceived(jpeg.Timestamp, imageBytes);
         }
     }
 }

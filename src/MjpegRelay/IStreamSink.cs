@@ -4,6 +4,6 @@ namespace MjpegRelay
 {
     public interface IStreamSink
     {
-        void ImageReceived(ReadOnlySequence<byte> imageBytes);
+        void ImageReceived(DateTime timestamp, ReadOnlySequence<byte> imageBytes);
     }
 }
