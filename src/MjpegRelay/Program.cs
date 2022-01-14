@@ -1,9 +1,15 @@
-﻿using MjpegRelay;
+﻿using Microsoft.Extensions.Logging.Console;
+using MjpegRelay;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
-    .AddLogging(logging => logging.AddSimpleConsole())
+    .AddLogging(logging => logging.AddSimpleConsole(options =>
+    {
+        options.ColorBehavior = LoggerColorBehavior.Enabled;
+        options.SingleLine = false;
+        options.TimestampFormat = "yyyy-MM-dd'T'hh:mm:ss ";
+    }))
     .AddHostedService<StreamService>()
     .AddSingleton<Broadcaster>()
     .AddSingleton<IStreamSink>(sp => sp.GetService<Broadcaster>());
