@@ -10,12 +10,13 @@ namespace MjpegRelay
     {
         private readonly IStreamSink _sink;
         private readonly RtspOptions _options;
-        private byte[] _imageBuffer;
+        private readonly ILogger<RtspSource> _logger;
 
-        public RtspSource(IStreamSink sink, IOptions<RtspOptions> options)
+        public RtspSource(IStreamSink sink, IOptions<RtspOptions> options, ILogger<RtspSource> logger)
         {
             _sink = sink;
             _options = options.Value;
+            _logger = logger;
         }
 
         public async Task StreamAsync(CancellationToken cancellationToken = default)
@@ -43,19 +44,7 @@ namespace MjpegRelay
                 return;
             }
 
-            var imageSize = jpeg.FrameSegment.Count;
-            if (_imageBuffer is null || _imageBuffer.Length < imageSize)
-            {
-                // There is no buffer or it is too small
-                _imageBuffer = jpeg.FrameSegment.ToArray();
-            }
-            else
-            {
-                // Reuse existing buffer
-                jpeg.FrameSegment.CopyTo(_imageBuffer);
-            }
-
-            var imageBytes = new ReadOnlySequence<byte>(_imageBuffer, 0, imageSize);
+            var imageBytes = new ReadOnlySequence<byte>(jpeg.FrameSegment);
             _sink.ImageReceived(jpeg.Timestamp, imageBytes);
         }
     }
