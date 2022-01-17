@@ -107,7 +107,7 @@ namespace MjpegRelay
             _lastImageWrite = Interlocked.Exchange(ref _lastImageMailbox, _lastImageWrite);
 
             // Signal the reader
-            _imageAvailable.Release();
+            _imageAvailable.TryRelease();
         }
 
         private async Task WriteLastImageAsync(ImageItem image, CancellationToken cancellationToken)
