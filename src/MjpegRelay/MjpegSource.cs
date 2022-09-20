@@ -37,12 +37,10 @@ namespace MjpegRelay
                 throw new Exception("Boundary was not found");
             }
 
+            boundary = HeaderUtilities.RemoveQuotes(boundary).ToString();
+
             using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            var multipartReader = new CustomMultipartReader(boundary, responseStream, headersLengthLimit: 64 * 1024)
-            {
-                BodyLengthLimit = null,
-                HeadersCountLimit = 64,
-            };
+            var multipartReader = new MultipartReader(boundary, responseStream);
 
             var pipe = new Pipe(new PipeOptions(useSynchronizationContext: false));
 
