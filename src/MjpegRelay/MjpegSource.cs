@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Net.Http.Headers;
 using Nerdbank.Streams;
 using System.Buffers;
+using System.IO.Pipelines;
 
 namespace MjpegRelay
 {
@@ -43,30 +44,33 @@ namespace MjpegRelay
                 HeadersCountLimit = 64,
             };
 
+            var pipe = new Pipe(new PipeOptions(useSynchronizationContext: false));
+
             while (!cancellationToken.IsCancellationRequested)
             {
                 var section = await multipartReader.ReadNextSectionAsync(cancellationToken);
                 var timestamp = DateTime.UtcNow; // Maybe get from header if available?
 
-                var sectionLength = int.Parse(section.Headers[HeaderNames.ContentLength]);
-                var buffer = ArrayPool<byte>.Shared.Rent(sectionLength);
+                var sectionStream = section.Body;
 
-                var stream = section.Body;
-                using var sequence = new Sequence<byte>(ArrayPool<byte>.Shared);
+                var writeTask = CopyAndCompleteAsync(sectionStream, pipe.Writer, cancellationToken).AsTask();
+                var readTask = pipe.Reader.FullReadAsync(cancellationToken).AsTask();
 
-                while (true)
-                {
-                    var count = await stream.ReadAsync(buffer, cancellationToken);
-                    if (count == 0)
-                    {
-                        break;
-                    }
+                await Task.WhenAll(writeTask, readTask);
 
-                    sequence.Write(buffer.AsSpan(0, count));
-                }
-                
-                _sink.ImageReceived(timestamp, sequence.AsReadOnlySequence);
+                var imageBytes = await readTask;
+                _sink.ImageReceived(timestamp, imageBytes);
+
+                await pipe.Reader.CompleteAsync();
+
+                pipe.Reset();
             }
+        }
+
+        private static async ValueTask CopyAndCompleteAsync(Stream source, PipeWriter writer, CancellationToken cancellationToken)
+        {
+            await PipeReader.Create(source).CopyToAsync(writer, cancellationToken);
+            await writer.CompleteAsync();
         }
     }
 }
