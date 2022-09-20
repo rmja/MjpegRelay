@@ -37,11 +37,10 @@ namespace MjpegRelay
             }
 
             using var responseStream = await response.Content.ReadAsStreamAsync(cancellationToken);
-            var multipartReader = new MultipartReader(boundary, responseStream)
+            var multipartReader = new CustomMultipartReader(boundary, responseStream, headersLengthLimit: 64 * 1024)
             {
                 BodyLengthLimit = null,
                 HeadersCountLimit = 64,
-                HeadersLengthLimit = 64 * 1024,
             };
 
             while (!cancellationToken.IsCancellationRequested)
