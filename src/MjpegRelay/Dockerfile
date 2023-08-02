@@ -19,4 +19,9 @@ RUN dotnet publish "MjpegRelay.csproj" -c Release -o /app/publish
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "MjpegRelay.dll"]
+
+#ENTRYPOINT ["dotnet", "MjpegRelay.dll"]
+
+COPY start.sh /usr/src/
+CMD [ "/bin/bash", "/usr/src/start.sh" ]
+
